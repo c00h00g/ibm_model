@@ -73,9 +73,3 @@ _calc_one_increment(
 
     return f_e_cnt * 1.0 / f_e_sen_cnt;
 }
-
-
-int main() {
-    printf("chg start to ibm model one!\n");
-    return 0;
-}
