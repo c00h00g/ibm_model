@@ -19,7 +19,7 @@ IBM_Model_One(int max_num) {
 }
 
 /**
- * @brief : 整体初始化
+ * @brief : 整体初始化uniq级别term转移概率
  **/
 void IBM_Model_One::
 init() {
@@ -62,8 +62,14 @@ init_term_freq(const set<string>& f_terms,
         }
     }
     debug_info();
+    return;
 }
 
+/**
+ * @brief : 初始化e->f频次，以及e频次
+ * @param e_sen : 英文分句
+ * @param f_sen : 法文分句
+ **/
 void IBM_Model_One::
 init_term_count_freq(const vector<string>& e_sen, 
                      const vector<string>& f_sen) {
@@ -92,6 +98,7 @@ init_one_step() {
 
 /**
  * @brief : read in f
+ * @param : 输入文件地址
  **/
 bool IBM_Model_One::
 load_data(const string& f_name) {
@@ -120,6 +127,10 @@ load_data(const string& f_name) {
     return true;
 }
 
+/**
+ * @brief : 处理一行数据
+ * @param : 文件中一行
+ **/
 void IBM_Model_One::
 deal_data(const string& input) {
     vector<string> e_f_vec;
@@ -155,6 +166,9 @@ deal_data(const string& input) {
     return;
 }
 
+/**
+ * @brief : 模型训练，输出是中间参数t(f|e)
+ **/
 void IBM_Model_One::
 train() {
     for (int i = 0; i < _max_iter_num; ++i) {
@@ -187,6 +201,9 @@ debug_info() {
     cout << "-------------" << endl;
 }
 
+/**
+ * @brief : m步骤
+ **/
 bool IBM_Model_One::
 _m_step() {
     set<string>::iterator it_f;
@@ -238,6 +255,11 @@ _e_step()  {
     return true;
 }
 
+/**
+ * @brief : 计算一个句对频次增量
+ * @param f_sen : 法文分句
+ * @param e_sen : 英文分句
+ **/
 double IBM_Model_One::
 _calc_sen_increment(const vector<string>& f_sen,
                     const vector<string>& e_sen) {
@@ -256,6 +278,11 @@ _calc_sen_increment(const vector<string>& f_sen,
     return true;
 }
 
+/**
+ * @brief : 计算一个f_term对一个英文句子总量
+ * @param f_term : 法文一个term
+ * @param e_sen : 英文分句
+ **/
 double IBM_Model_One::
 _calc_sen_sum_increment(const string& f_term,
                         const vector<string>& e_sen) {
