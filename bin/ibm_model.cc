@@ -20,8 +20,20 @@ init() {
     assert(f_size == e_size);
 
     for (int i = 0; i < f_size; ++i) {
-        init_term_freq(e[i], f[i]);
+        //insert terms
+        for (int j = 0; j < e[i].size(); ++j) {
+            e_uniq_terms.insert(e[i][j]);
+        }
+
+        for (int j = 0; j < f[i].size(); ++j) {
+            f_uniq_terms.insert(f[i][j]);
+        }
     }
+
+    //初始化转移矩阵
+    init_term_freq(f_uniq_terms, e_uniq_terms);
+
+    debug_info();
     return;
 }
 
@@ -29,13 +41,19 @@ init() {
  * @brief : 初始化t概率，表示p(f|e)的概率
  **/
 void IBM_Model_One::
-init_term_freq(const vector<string>& e_sen, 
-               const vector<string>& f_sen) {
-    for (int i = 0; i < e_sen.size(); ++i) {
-        for (int j = 0; j < f_sen.size(); ++j) {
-            term_prob[make_pair(e_sen[i], f_sen[j])] = init_prob;
+init_term_freq(const set<string>& f_terms, 
+               const set<string>& e_terms) {
+    init_prob = 0.25;
+    set<string>::iterator it_f;
+    set<string>::iterator it_e;
+    for (it_f = f_uniq_terms.begin(); it_f != f_uniq_terms.end(); it_f++) {
+        for (it_e = e_uniq_terms.begin(); it_e != e_uniq_terms.end(); it_e++) {
+            string f_term = *it_f;
+            string e_term = *it_e;
+            term_prob[make_pair(f_term, e_term)] = init_prob;
         }
     }
+    debug_info();
 }
 
 void IBM_Model_One::
@@ -44,7 +62,7 @@ init_term_count_freq(const vector<string>& e_sen,
     for (int i = 0; i < e_sen.size(); ++i) {
         e_count[e_sen[i]] = 0;
         for (int j = 0; j < f_sen.size(); ++j) {
-            f_e_co_occur_count[make_pair(e_sen[i], f_sen[j])] = 0.0;
+            f_e_co_occur_count[make_pair(f_sen[j], e_sen[i])] = 0.0;
         }
     }
     return;
@@ -141,11 +159,42 @@ train() {
 
         //m step
         _m_step();
+
+        debug_info();
     }
+}
+
+void IBM_Model_One::
+debug_info() {
+    set<string>::iterator it_f;
+    set<string>::iterator it_e;
+    for (it_f = f_uniq_terms.begin(); it_f != f_uniq_terms.end(); it_f++) {
+        for (it_e = e_uniq_terms.begin(); it_e != e_uniq_terms.end(); it_e++) {
+            string f_term = *it_f;
+            string e_term = *it_e;
+            pair<string, string> one_pair = make_pair(f_term, e_term);
+            cout << f_term << ":" << e_term << "==>" << term_prob[one_pair] << endl;
+        }
+    }
+    cout << "-------------" << endl;
 }
 
 bool IBM_Model_One::
 _m_step() {
+    set<string>::iterator it_f;
+    set<string>::iterator it_e;
+    for (it_f = f_uniq_terms.begin(); it_f != f_uniq_terms.end(); it_f++) {
+        for (it_e = e_uniq_terms.begin(); it_e != e_uniq_terms.end(); it_e++) {
+            string f_term = *it_f;
+            string e_term = *it_e;
+            pair<string, string> one_pair = make_pair(f_term, e_term);
+            if (e_count[e_term] != 0) {
+                double prob = f_e_co_occur_count[one_pair] * 1.0 / e_count[e_term];
+                term_prob[one_pair] = prob;
+            }
+        }
+    }
+
     return true;
 }
 
@@ -157,6 +206,8 @@ _e_step()  {
     int f_len = f.size();
     int e_len = e.size();
 
+    assert(f_len == e_len);
+
     //for each sentence
     for (int i = 0; i < f_len; ++i) {
         vector<string> f_sen = f[i];
@@ -167,36 +218,30 @@ _e_step()  {
     return true;
 }
 
-bool IBM_Model_One::
+double IBM_Model_One::
 _calc_sen_increment(const vector<string>& f_sen,
                     const vector<string>& e_sen) {
     for (int i = 0; i < f_sen.size(); ++i) {
         const string f_term = f_sen[i];
-        const string e_term = e_sen[i];
-        double one_incre = _calc_one_increment(f_term, e_term, e_sen);
-        f_e_co_occur_count[make_pair(f_term, e_term)] += one_incre;
-        e_count[e_term] += one_incre;
+        double f_sum = _calc_sen_sum_increment(f_term, e_sen);
+        cout << "f_sum:" << f_sum << endl;
+        for (int j = 0; j < e_sen.size(); ++j) {
+            const string e_term = e_sen[j];
+            double f_e_value = term_prob[make_pair(f_term, e_term)];
+            double one_incre = f_e_value / f_sum;
+            f_e_co_occur_count[make_pair(f_term, e_term)] += one_incre;
+            e_count[e_term] += one_incre;
+        }
     }
     return true;
 }
 
-/**
- * @brief : 
- **/
-bool IBM_Model_One::
-_calc_one_increment(
-        const string f_term,
-        const string e_term,
-        const vector<string>& one_e_sen) {
-
-    double f_e_prob = term_prob[make_pair(e_term, f_term)];
-
-    double sum_prob = 0.0;
-    for (int i = 0; i < one_e_sen.size(); ++i) {
-        string one_e_term = one_e_sen[i];
-        sum_prob += term_prob[make_pair(one_e_term, f_term)];
-    }
-
-    return f_e_prob / sum_prob;
+double IBM_Model_One::
+_calc_sen_sum_increment(const string& f_term,
+                        const vector<string>& e_sen) {
+   double sum = 0.0;
+   for (int i = 0; i < e_sen.size(); ++i) {
+       sum += term_prob[make_pair(f_term, e_sen[i])];
+   }
+   return sum;
 }
-
