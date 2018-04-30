@@ -1,14 +1,22 @@
-#include<string>
-#include<iostream>
-#include<vector>
-#include<map>
-#include<utility> // pair
+#include <string>
+#include <iostream>
+#include <vector>
+#include <map>
+#include <utility> // pair
+#include <fstream>
+#include <iostream>
+#include <assert.h>
+
+#include "utils.h"
 
 using std::string;
 using std::vector;
 using std::map;
 using std::pair;
 using std::make_pair;
+using std::ifstream;
+using std::cout;
+using std::endl;
 
 //ibm model 1
 class IBM_Model_One {
@@ -31,10 +39,6 @@ public:
     bool _e_step();
     bool _m_step();
 
-    bool _calc_increment(
-           const vector<string>& one_f_sen,
-           const vector<string>& one_e_sen);
-
     bool _calc_sen_increment(const vector<string>& f_sen,
                              const vector<string>& e_sen);
 
@@ -42,8 +46,10 @@ public:
                              const string e_term,
                              const vector<string>& one_e_sen);
 
+    void deal_data(const string& input);
+
 private:
-    vector<vector<string> >  f; //france segment
+    vector<vector<string> > f; //france segment
     vector<vector<string> > e; //english segment
 
     map<pair<string, string>, double> f_e_co_occur_count; //f and e co occur times
@@ -54,3 +60,4 @@ private:
 
     int _max_iter_num;
 };
+

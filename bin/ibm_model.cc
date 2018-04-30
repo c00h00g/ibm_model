@@ -15,6 +15,14 @@ IBM_Model_One(int max_num) {
  **/
 void IBM_Model_One::
 init() {
+    int f_size = f.size();
+    int e_size = e.size();
+    assert(f_size == e_size);
+
+    for (int i = 0; i < f_size; ++i) {
+        init_term_freq(e[i], f[i]);
+    }
+    return;
 }
 
 /**
@@ -52,9 +60,7 @@ init_one_step() {
 
     //初始化计数
     for (int i = 0; i < f.size(); ++i) {
-        for (int j = 0; j < e.size(); ++j) {
-            init_term_count_freq(e[j], f[i]);
-        }
+        init_term_count_freq(e[i], f[i]);
     }
 }
 
@@ -63,12 +69,70 @@ init_one_step() {
  **/
 bool IBM_Model_One::
 load_data(const string& f_name) {
+    ifstream fin(f_name);  
+    string input;
+    while (getline(fin, input)) {
+        cout << input << endl;
+        deal_data(input);
+    }
+
+    //debug
+    for (int i = 0 ; i < f.size(); ++i) {
+        for (int j = 0; j < f[i].size(); ++j) {
+            cout << f[i][j] << endl;
+        }
+        cout << "=====" << endl;
+    }
+
+    for (int i = 0 ; i < e.size(); ++i) {
+        for (int j = 0; j < e[i].size(); ++j) {
+            cout << e[i][j] << endl;
+        }
+        cout << "=====" << endl;
+    }
+
     return true;
+}
+
+void IBM_Model_One::
+deal_data(const string& input) {
+    vector<string> e_f_vec;
+    string split_one_sep = "\t";
+    split_string(input, e_f_vec, split_one_sep);
+
+    //debug
+    cout << e_f_vec[0] << endl;;
+
+    string split_two_sep = " ";
+
+    //split f
+    vector<string> f_vec;
+    split_string(e_f_vec[0], f_vec, split_two_sep);
+
+    for (int i = 0; i < f_vec.size(); ++i) {
+        cout << f_vec[i] << endl;
+    }
+
+    f.push_back(f_vec);
+
+    cout << e_f_vec[1] << endl;
+    //split e
+    vector<string> e_vec;
+    split_string(e_f_vec[1], e_vec, split_two_sep);
+
+    for (int i = 0; i < e_vec.size(); ++i) {
+        cout << e_vec[i] << endl;
+    }
+
+    e.push_back(e_vec);
+
+    return;
 }
 
 void IBM_Model_One::
 train() {
     for (int i = 0; i < _max_iter_num; ++i) {
+        cout << "start iter:" << i << "-------" << endl;
         //初始化
         init_one_step();
 
@@ -78,6 +142,11 @@ train() {
         //m step
         _m_step();
     }
+}
+
+bool IBM_Model_One::
+_m_step() {
+    return true;
 }
 
 /**
@@ -90,11 +159,9 @@ _e_step()  {
 
     //for each sentence
     for (int i = 0; i < f_len; ++i) {
-        for (int j = 0; j < e_len; ++j) {
-            vector<string> f_sen = f[i];
-            vector<string> e_sen = e[j];
-            _calc_sen_increment(f_sen, e_sen);
-        }
+        vector<string> f_sen = f[i];
+        vector<string> e_sen = e[i];
+        _calc_sen_increment(f_sen, e_sen);
     }
 
     return true;
@@ -104,13 +171,11 @@ bool IBM_Model_One::
 _calc_sen_increment(const vector<string>& f_sen,
                     const vector<string>& e_sen) {
     for (int i = 0; i < f_sen.size(); ++i) {
-        for (int j = 0; j < e_sen.size(); ++j) {
-            const string f_term = f_sen[i];
-            const string e_term = e_sen[j];
-            double one_incre = _calc_one_increment(f_term, e_term, e_sen);
-            f_e_co_occur_count[make_pair(f_term, e_term)] += one_incre;
-            e_count[e_term] += one_incre;
-        }
+        const string f_term = f_sen[i];
+        const string e_term = e_sen[i];
+        double one_incre = _calc_one_increment(f_term, e_term, e_sen);
+        f_e_co_occur_count[make_pair(f_term, e_term)] += one_incre;
+        e_count[e_term] += one_incre;
     }
     return true;
 }
