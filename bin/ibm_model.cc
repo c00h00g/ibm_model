@@ -1,6 +1,14 @@
 #include "ibm_model.h"
 #include<stdio.h>
 
+typedef pair<pair<string, string>, double> pair_map;
+
+struct cmp {
+    bool operator() (const pair_map& p1, const pair_map& p2) {
+        return p1.second > p2.second;
+    }
+};
+
 IBM_Model_One::
 IBM_Model_One(int max_num) {
     f.clear();
@@ -193,6 +201,18 @@ _m_step() {
                 term_prob[one_pair] = prob;
             }
         }
+    }
+
+    //排序
+    vector<pair_map> score_vec;
+    map<pair<string, string>, double>::iterator iter; 
+    for (iter = term_prob.begin(); iter != term_prob.end(); ++iter) {
+        score_vec.push_back(*iter);
+    }
+    sort(score_vec.begin(), score_vec.end(), cmp());
+    
+    for (int i = 0; i < score_vec.size(); ++i) {
+        cout << "i:" << i << score_vec[i].first.first << "-" << score_vec[i].first.second << ":" << score_vec[i].second << endl;
     }
 
     return true;
