@@ -170,11 +170,11 @@ train() {
 
         //e step
         _e_step();
-        count << "after e step!" << endl;
+        cout << "after e step!" << endl;
 
         //m step
         _m_step();
-        count << "after m step!" << endl;
+        cout << "after m step!" << endl;
 
         debug_info();
     }
