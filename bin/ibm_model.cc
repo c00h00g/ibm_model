@@ -102,7 +102,7 @@ init_one_step() {
  **/
 bool IBM_Model_One::
 load_data(const string& f_name) {
-    ifstream fin(f_name);  
+    ifstream fin(f_name.c_str());  
     string input;
     while (getline(fin, input)) {
         cout << input << endl;
