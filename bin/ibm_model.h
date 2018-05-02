@@ -7,6 +7,7 @@
 #include <iostream>
 #include <assert.h>
 #include <set>
+#include<algorithm>
 
 #include "utils.h"
 

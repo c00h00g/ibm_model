@@ -18,4 +18,4 @@ ibm_model.o : ibm_model.cc ibm_model.h utils.h
 
 
 clean:
-	$(RM) main.o ibm_model.o utils.o
+	$(RM) main.o ibm_model.o utils.o ibm_model
