@@ -30,8 +30,7 @@ public:
 
     void init_one_step();
 
-    void init_term_freq(const set<string>& e_terms, 
-                        const set<string>& f_terms);
+    void init_term_freq();
 
     void init_term_count_freq(const vector<string>& e_sen, 
                               const vector<string>& f_sen);

@@ -38,10 +38,13 @@ init() {
         }
     }
 
-    //初始化转移矩阵
-    init_term_freq(f_uniq_terms, e_uniq_terms);
+    cout << "build f and e success!" << e_uniq_terms.size() << "--" << f_uniq_terms.size() << endl;
 
-    debug_info();
+    //初始化转移矩阵
+    init_term_freq();
+
+    cout << "init_term_freq success!" << endl;
+
     return;
 }
 
@@ -49,8 +52,7 @@ init() {
  * @brief : 初始化t概率，表示p(f|e)的概率
  **/
 void IBM_Model_One::
-init_term_freq(const set<string>& f_terms, 
-               const set<string>& e_terms) {
+init_term_freq() {
     init_prob = 0.25;
     set<string>::iterator it_f;
     set<string>::iterator it_e;
@@ -105,11 +107,12 @@ load_data(const string& f_name) {
     ifstream fin(f_name.c_str());  
     string input;
     while (getline(fin, input)) {
-        cout << input << endl;
         deal_data(input);
     }
 
-    //debug
+    cout << "deal data success!" << endl;
+
+#if _debug
     for (int i = 0 ; i < f.size(); ++i) {
         for (int j = 0; j < f[i].size(); ++j) {
             cout << f[i][j] << endl;
@@ -123,6 +126,7 @@ load_data(const string& f_name) {
         }
         cout << "=====" << endl;
     }
+#endif
 
     return true;
 }
@@ -137,29 +141,17 @@ deal_data(const string& input) {
     string split_one_sep = "\t";
     split_string(input, e_f_vec, split_one_sep);
 
-    //debug
-    cout << e_f_vec[0] << endl;;
-
     string split_two_sep = " ";
 
     //split f
     vector<string> f_vec;
     split_string(e_f_vec[0], f_vec, split_two_sep);
 
-    for (int i = 0; i < f_vec.size(); ++i) {
-        cout << f_vec[i] << endl;
-    }
-
     f.push_back(f_vec);
 
-    cout << e_f_vec[1] << endl;
     //split e
     vector<string> e_vec;
     split_string(e_f_vec[1], e_vec, split_two_sep);
-
-    for (int i = 0; i < e_vec.size(); ++i) {
-        cout << e_vec[i] << endl;
-    }
 
     e.push_back(e_vec);
 
@@ -178,9 +170,11 @@ train() {
 
         //e step
         _e_step();
+        count << "after e step!" << endl;
 
         //m step
         _m_step();
+        count << "after m step!" << endl;
 
         debug_info();
     }
