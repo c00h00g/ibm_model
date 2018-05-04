@@ -1,3 +1,6 @@
+#ifndef _TERM_IDX_TRANS_
+#define _TERM_IDX_TRANS_
+
 #include <map>
 #include <string>
 #include <iostream>
@@ -29,3 +32,5 @@ private:
     //当前index
     long long _cur_index;
 };
+
+#endif

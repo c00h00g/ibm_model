@@ -1,3 +1,6 @@
+#ifndef _IBM_MODEL_H
+#define _IBM_MODEL_H
+
 #include <string>
 #include <iostream>
 #include <vector>
@@ -77,3 +80,4 @@ private:
     void operator=(const IBM_Model_One&);
 };
 
+#endif
