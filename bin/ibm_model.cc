@@ -10,12 +10,14 @@ struct cmp {
 };
 
 IBM_Model_One::
-IBM_Model_One(int max_num) {
+IBM_Model_One(int max_num, int direction) {
     f.clear();
     e.clear();
     f_e_co_occur_count.clear();
     e_count.clear();
     _max_iter_num = max_num;
+    _direction = direction;
+
     _term_index = new(std::nothrow) TermIdxTrans();
 
     //一定不能为空
@@ -124,7 +126,11 @@ load_data(const string& f_name) {
     ifstream fin(f_name.c_str());  
     string input;
     while (getline(fin, input)) {
-        deal_data(input);
+        if (_direction == 0) {
+            deal_data_forword(input);
+        }else if (_direction == 1) {
+            deal_data_reverse(input);
+        }
     }
 
     cout << "deal data success!" << endl;
@@ -152,11 +158,11 @@ load_data(const string& f_name) {
 }
 
 /**
- * @brief : 处理一行数据, 填充f和e数组
+ * @brief : 正向处理一行数据, 填充f和e数组
  * @param : 文件中一行
  **/
 void IBM_Model_One::
-deal_data(const string& input) {
+deal_data_forword(const string& input) {
     vector<string> e_f_vec;
     string split_one_sep = "\t";
     split_string(input, e_f_vec, split_one_sep);
@@ -185,6 +191,39 @@ deal_data(const string& input) {
 }
 
 /**
+ * @brief : 反向处理一行数据, 填充f和e数组
+ * @param : 文件中一行
+ **/
+void IBM_Model_One::
+deal_data_reverse(const string& input) {
+    vector<string> e_f_vec;
+    string split_one_sep = "\t";
+    split_string(input, e_f_vec, split_one_sep);
+
+    string split_two_sep = " ";
+
+    //split f
+    vector<string> f_vec;
+    split_string(e_f_vec[1], f_vec, split_two_sep);
+
+    f.push_back(f_vec);
+    for (int i = 0; i < f_vec.size(); ++i) {
+        _term_index->insert(f_vec[i]);
+    }
+
+    //split e
+    vector<string> e_vec;
+    split_string(e_f_vec[0], e_vec, split_two_sep);
+
+    e.push_back(e_vec);
+    for (int i = 0; i < e_vec.size(); ++i) {
+        _term_index->insert(e_vec[i]);
+    }
+
+    return;
+}
+
+/**
  * @brief : 模型训练，输出是中间参数t(f|e)
  **/
 void IBM_Model_One::
@@ -203,6 +242,21 @@ train() {
         _m_step();
         cout << "after m step!" << endl;
     }
+
+    //dump term->idx 数据
+    _term_index->dump_data("TERM_INDEX_MP");
+
+    //dump 对齐概率
+    string align_file = "ALIGN_PROB";
+    if (_direction == 0) {
+        align_file += "_FORWARD";
+    }else if (_direction == 1) {
+        align_file += "_REVERSE";
+    }
+
+    dump_prob(align_file.c_str());
+    
+    return;
 }
 
 void IBM_Model_One::
@@ -224,7 +278,40 @@ debug_info() {
 }
 
 /**
- * @brief : m步骤
+ * @brief : 将单term之间对齐的概率dump下来
+ **/
+void IBM_Model_One::
+dump_prob(const char * file_name) {
+    assert(NULL != file_name);
+
+    ofstream term_align_prob;
+    term_align_prob.open(file_name);
+
+    //排序
+    vector<pair_map> score_vec;
+    map<pair<long long, long long>, double>::iterator iter; 
+    for (iter = term_prob.begin(); iter != term_prob.end(); ++iter) {
+        score_vec.push_back(*iter);
+    }
+    sort(score_vec.begin(), score_vec.end(), cmp());
+
+    for (int i = 0; i < score_vec.size(); ++i) {
+        string f_term = _term_index->get_index_cor_term(score_vec[i].first.first);
+        string e_term = _term_index->get_index_cor_term(score_vec[i].first.second);
+        term_align_prob << score_vec[i].first.first << "\t"
+                        << f_term << "\t"
+                        << score_vec[i].first.second << "\t"
+                        << e_term << "\t"
+                        << score_vec[i].second << endl;
+    }
+
+    term_align_prob.close();
+
+    return;
+}
+
+/**
+ * @brief : m步
  **/
 bool IBM_Model_One::
 _m_step() {
@@ -254,12 +341,16 @@ _m_step() {
         string f_term = _term_index->get_index_cor_term(score_vec[i].first.first);
         string e_term = _term_index->get_index_cor_term(score_vec[i].first.second);
 
-        cout << "chg-sort--" << "i:" << i << score_vec[i].first.first << "-" << f_term << "||"
+        cout << "chg-sort--" << i << ":" << score_vec[i].first.first << "-" << f_term << "||"
              << score_vec[i].first.second << "-" << e_term << "||" << score_vec[i].second << endl;
+        if (i > 5000) {
+            break;
+        }
     }
 
     return true;
 }
+
 
 /**
  * @brief : execute e_step
@@ -294,7 +385,6 @@ _calc_sen_increment(const vector<string>& f_sen,
         long long f_term_idx = _term_index->get_term_index(f_term);
 
         double f_sum = _calc_sen_sum_increment(f_term, e_sen);
-        cout << "f_sum:" << f_sum << endl;
 
         for (int j = 0; j < e_sen.size(); ++j) {
             const string e_term = e_sen[j];

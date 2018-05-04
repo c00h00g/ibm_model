@@ -10,7 +10,8 @@
 #include <iostream>
 #include <assert.h>
 #include <set>
-#include<algorithm>
+#include <algorithm>
+#include <fstream>
 
 #include "utils.h"
 #include "term_idx_trans.h"
@@ -21,6 +22,7 @@ using std::map;
 using std::pair;
 using std::make_pair;
 using std::ifstream;
+using std::ofstream;
 using std::cout;
 using std::endl;
 using std::set;
@@ -28,7 +30,7 @@ using std::set;
 //ibm model 1
 class IBM_Model_One {
 public:
-    IBM_Model_One(int max_num);
+    IBM_Model_One(int max_num, int _direction);
 
     ~IBM_Model_One();
 
@@ -53,9 +55,13 @@ public:
     double _calc_sen_sum_increment(const string& f_term,
                                    const vector<string>& e_sen);
 
-    void deal_data(const string& input);
+    void deal_data_forword(const string& input);
+
+    void deal_data_reverse(const string& input);
 
     void debug_info();
+
+    void dump_prob(const char * file_name);
 
 private:
     vector<vector<string> > f; //france segment
@@ -71,6 +77,11 @@ private:
     double init_prob; // term map start probability
 
     int _max_iter_num;
+
+    //训练的方向
+    //0: 正向
+    //1: 反向
+    int _direction;
 
     //term-->index索引
     TermIdxTrans * _term_index;

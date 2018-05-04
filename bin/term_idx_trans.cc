@@ -61,3 +61,25 @@ print_index_to_term() {
     }
 }
 
+/**
+ * @brief : dump中间数据，用来生成phrase对齐
+ **/
+void TermIdxTrans::
+dump_data(const char * file_name) {
+    //dump term -> id映射关系
+    ofstream td_mp_file;
+    td_mp_file.open(file_name);
+
+    TermIdxIter iter;
+    for (iter = _term_to_index.begin(); iter != _term_to_index.end(); ++iter) {
+        string key = iter->first;
+        long long value = iter->second;
+        td_mp_file << key << "\t" << value << endl;
+    }
+
+    //关闭
+    td_mp_file.close();
+
+    return;
+}
+
