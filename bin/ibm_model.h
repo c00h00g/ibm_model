@@ -10,6 +10,7 @@
 #include<algorithm>
 
 #include "utils.h"
+#include "term_idx_trans.h"
 
 using std::string;
 using std::vector;
@@ -25,6 +26,8 @@ using std::set;
 class IBM_Model_One {
 public:
     IBM_Model_One(int max_num);
+
+    ~IBM_Model_One();
 
     void init();
 
@@ -55,16 +58,19 @@ private:
     vector<vector<string> > f; //france segment
     vector<vector<string> > e; //english segment
 
-    set<string> f_uniq_terms;
-    set<string> e_uniq_terms;
+    set<long long> f_uniq_terms;
+    set<long long> e_uniq_terms;
 
-    map<pair<string, string>, double> f_e_co_occur_count; //f and e co occur times
-    map<string, double> e_count; // e occur times
+    map<pair<long long, long long>, double> f_e_co_occur_count; //f and e co occur times
+    map<long long, double> e_count; // e occur times
 
-    map<pair<string, string>, double> term_prob; //term f and term e parameters, 最终输出
+    map<pair<long long, long long>, double> term_prob; //term f and term e parameters, 最终输出
     double init_prob; // term map start probability
 
     int _max_iter_num;
+
+    //term-->index索引
+    TermIdxTrans * _term_index;
 
     //no copy allowed
     IBM_Model_One(const IBM_Model_One&);

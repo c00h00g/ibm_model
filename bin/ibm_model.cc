@@ -1,7 +1,7 @@
 #include "ibm_model.h"
 #include<stdio.h>
 
-typedef pair<pair<string, string>, double> pair_map;
+typedef pair<pair<long long, long long>, double> pair_map;
 
 struct cmp {
     bool operator() (const pair_map& p1, const pair_map& p2) {
@@ -16,6 +16,18 @@ IBM_Model_One(int max_num) {
     f_e_co_occur_count.clear();
     e_count.clear();
     _max_iter_num = max_num;
+    _term_index = new(std::nothrow) TermIdxTrans();
+
+    //一定不能为空
+    assert(_term_index != NULL);
+}
+
+IBM_Model_One::
+~IBM_Model_One() {
+    if (NULL != _term_index) {
+        delete _term_index;
+        _term_index = NULL;
+    }
 }
 
 /**
@@ -25,16 +37,19 @@ void IBM_Model_One::
 init() {
     int f_size = f.size();
     int e_size = e.size();
+
     assert(f_size == e_size);
 
     for (int i = 0; i < f_size; ++i) {
         //insert terms
         for (int j = 0; j < e[i].size(); ++j) {
-            e_uniq_terms.insert(e[i][j]);
+            long long term_idx = _term_index->get_term_index(e[i][j]);
+            e_uniq_terms.insert(term_idx);
         }
 
         for (int j = 0; j < f[i].size(); ++j) {
-            f_uniq_terms.insert(f[i][j]);
+            long long term_idx = _term_index->get_term_index(f[i][j]);
+            f_uniq_terms.insert(term_idx);
         }
     }
 
@@ -54,16 +69,16 @@ init() {
 void IBM_Model_One::
 init_term_freq() {
     init_prob = 0.25;
-    set<string>::iterator it_f;
-    set<string>::iterator it_e;
+    set<long long>::iterator it_f;
+    set<long long>::iterator it_e;
     for (it_f = f_uniq_terms.begin(); it_f != f_uniq_terms.end(); it_f++) {
         for (it_e = e_uniq_terms.begin(); it_e != e_uniq_terms.end(); it_e++) {
-            string f_term = *it_f;
-            string e_term = *it_e;
+            long long f_term = *it_f;
+            long long e_term = *it_e;
             term_prob[make_pair(f_term, e_term)] = init_prob;
         }
     }
-    debug_info();
+    //debug_info();
     return;
 }
 
@@ -76,9 +91,11 @@ void IBM_Model_One::
 init_term_count_freq(const vector<string>& e_sen, 
                      const vector<string>& f_sen) {
     for (int i = 0; i < e_sen.size(); ++i) {
-        e_count[e_sen[i]] = 0;
+        long long e_idx = _term_index->get_term_index(e_sen[i]);
+        e_count[e_idx] = 0;
         for (int j = 0; j < f_sen.size(); ++j) {
-            f_e_co_occur_count[make_pair(f_sen[j], e_sen[i])] = 0.0;
+            long long f_idx = _term_index->get_term_index(f_sen[j]);
+            f_e_co_occur_count[make_pair(f_idx, e_idx)] = 0.0;
         }
     }
     return;
@@ -113,6 +130,9 @@ load_data(const string& f_name) {
     cout << "deal data success!" << endl;
 
 #if _debug
+    _term_index->print_term_to_index();
+    _term_index->print_index_to_term();
+
     for (int i = 0 ; i < f.size(); ++i) {
         for (int j = 0; j < f[i].size(); ++j) {
             cout << f[i][j] << endl;
@@ -132,7 +152,7 @@ load_data(const string& f_name) {
 }
 
 /**
- * @brief : 处理一行数据
+ * @brief : 处理一行数据, 填充f和e数组
  * @param : 文件中一行
  **/
 void IBM_Model_One::
@@ -148,12 +168,18 @@ deal_data(const string& input) {
     split_string(e_f_vec[0], f_vec, split_two_sep);
 
     f.push_back(f_vec);
+    for (int i = 0; i < f_vec.size(); ++i) {
+        _term_index->insert(f_vec[i]);
+    }
 
     //split e
     vector<string> e_vec;
     split_string(e_f_vec[1], e_vec, split_two_sep);
 
     e.push_back(e_vec);
+    for (int i = 0; i < e_vec.size(); ++i) {
+        _term_index->insert(e_vec[i]);
+    }
 
     return;
 }
@@ -173,23 +199,25 @@ train() {
         cout << "after e step!" << endl;
 
         //m step
+        cout << "chg-before" << i << endl;
         _m_step();
         cout << "after m step!" << endl;
-
-        debug_info();
     }
 }
 
 void IBM_Model_One::
 debug_info() {
-    set<string>::iterator it_f;
-    set<string>::iterator it_e;
+    set<long long>::iterator it_f;
+    set<long long>::iterator it_e;
     for (it_f = f_uniq_terms.begin(); it_f != f_uniq_terms.end(); it_f++) {
         for (it_e = e_uniq_terms.begin(); it_e != e_uniq_terms.end(); it_e++) {
-            string f_term = *it_f;
-            string e_term = *it_e;
-            pair<string, string> one_pair = make_pair(f_term, e_term);
-            cout << f_term << ":" << e_term << "==>" << term_prob[one_pair] << endl;
+            long long f_term_idx = *it_f;
+            long long e_term_idx = *it_e;
+            string f_term = _term_index->get_index_cor_term(f_term_idx);
+            string e_term = _term_index->get_index_cor_term(e_term_idx);
+
+            pair<long long, long long> one_pair = make_pair(f_term_idx, e_term_idx);
+            cout << f_term_idx << ":" << f_term << "||" << e_term_idx << ":" << e_term << "==>" << term_prob[one_pair] << endl;
         }
     }
     cout << "-------------" << endl;
@@ -200,15 +228,15 @@ debug_info() {
  **/
 bool IBM_Model_One::
 _m_step() {
-    set<string>::iterator it_f;
-    set<string>::iterator it_e;
+    set<long long>::iterator it_f;
+    set<long long>::iterator it_e;
     for (it_f = f_uniq_terms.begin(); it_f != f_uniq_terms.end(); it_f++) {
         for (it_e = e_uniq_terms.begin(); it_e != e_uniq_terms.end(); it_e++) {
-            string f_term = *it_f;
-            string e_term = *it_e;
-            pair<string, string> one_pair = make_pair(f_term, e_term);
-            if (e_count[e_term] != 0) {
-                double prob = f_e_co_occur_count[one_pair] * 1.0 / e_count[e_term];
+            long long f_term_idx = *it_f;
+            long long e_term_idx = *it_e;
+            pair<long long, long long> one_pair = make_pair(f_term_idx, e_term_idx);
+            if (e_count[e_term_idx] != 0) {
+                double prob = f_e_co_occur_count[one_pair] * 1.0 / e_count[e_term_idx];
                 term_prob[one_pair] = prob;
             }
         }
@@ -216,14 +244,18 @@ _m_step() {
 
     //排序
     vector<pair_map> score_vec;
-    map<pair<string, string>, double>::iterator iter; 
+    map<pair<long long, long long>, double>::iterator iter; 
     for (iter = term_prob.begin(); iter != term_prob.end(); ++iter) {
         score_vec.push_back(*iter);
     }
     sort(score_vec.begin(), score_vec.end(), cmp());
     
     for (int i = 0; i < score_vec.size(); ++i) {
-        cout << "i:" << i << score_vec[i].first.first << "-" << score_vec[i].first.second << ":" << score_vec[i].second << endl;
+        string f_term = _term_index->get_index_cor_term(score_vec[i].first.first);
+        string e_term = _term_index->get_index_cor_term(score_vec[i].first.second);
+
+        cout << "chg-sort--" << "i:" << i << score_vec[i].first.first << "-" << f_term << "||"
+             << score_vec[i].first.second << "-" << e_term << "||" << score_vec[i].second << endl;
     }
 
     return true;
@@ -259,14 +291,20 @@ _calc_sen_increment(const vector<string>& f_sen,
                     const vector<string>& e_sen) {
     for (int i = 0; i < f_sen.size(); ++i) {
         const string f_term = f_sen[i];
+        long long f_term_idx = _term_index->get_term_index(f_term);
+
         double f_sum = _calc_sen_sum_increment(f_term, e_sen);
         cout << "f_sum:" << f_sum << endl;
+
         for (int j = 0; j < e_sen.size(); ++j) {
             const string e_term = e_sen[j];
-            double f_e_value = term_prob[make_pair(f_term, e_term)];
+            long long e_term_idx = _term_index->get_term_index(e_term);
+
+            double f_e_value = term_prob[make_pair(f_term_idx, e_term_idx)];
             double one_incre = f_e_value / f_sum;
-            f_e_co_occur_count[make_pair(f_term, e_term)] += one_incre;
-            e_count[e_term] += one_incre;
+
+            f_e_co_occur_count[make_pair(f_term_idx, e_term_idx)] += one_incre;
+            e_count[e_term_idx] += one_incre;
         }
     }
     return true;
@@ -280,9 +318,11 @@ _calc_sen_increment(const vector<string>& f_sen,
 double IBM_Model_One::
 _calc_sen_sum_increment(const string& f_term,
                         const vector<string>& e_sen) {
+   long long f_term_idx = _term_index->get_term_index(f_term);
    double sum = 0.0;
    for (int i = 0; i < e_sen.size(); ++i) {
-       sum += term_prob[make_pair(f_term, e_sen[i])];
+       long long e_term_idx = _term_index->get_term_index(e_sen[i]);
+       sum += term_prob[make_pair(f_term_idx, e_term_idx)];
    }
    return sum;
 }

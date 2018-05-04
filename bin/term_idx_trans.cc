@@ -38,3 +38,26 @@ get_index_cor_term(long long term_idx) {
 
     return _index_to_term[term_idx];
 }
+
+void TermIdxTrans::
+print_term_to_index() {
+    TermIdxIter iter;
+    cout << "term_idx size : " << _term_to_index.size() << endl;
+    for (iter = _term_to_index.begin(); iter != _term_to_index.end(); ++iter) {
+        string key = iter->first;
+        long long value = iter->second;
+        cout << key << ":" << value << endl;
+    }
+}
+
+void TermIdxTrans::
+print_index_to_term() {
+    IdxTermIter iter;
+    cout << "idx_to_term size : " << _index_to_term.size() << endl;
+    for (iter = _index_to_term.begin(); iter != _index_to_term.end(); ++iter) {
+        long long key = iter->first;
+        string value = iter->second;
+        cout << key << ":" << value << endl;
+    }
+}
+
