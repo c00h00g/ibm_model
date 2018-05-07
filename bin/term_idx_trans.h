@@ -4,13 +4,18 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <vector>
 #include <fstream>
+
+#include "utils.h"
 
 using std::map;
 using std::string;
 using std::cout;
 using std::endl;
 using std::ofstream;
+using std::ifstream;
+using std::vector;
 
 typedef map<string, long long>::iterator TermIdxIter;
 typedef map<long long, string>::iterator IdxTermIter;
@@ -29,6 +34,8 @@ public:
     void print_index_to_term();
 
     void dump_data(const char * file_name);
+
+    void load_data(const char * file_name);
 
 private:
     map<string, long long> _term_to_index;

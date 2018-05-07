@@ -83,3 +83,24 @@ dump_data(const char * file_name) {
     return;
 }
 
+/**
+ * @brief : 加载term ==> id映射数据
+ **/
+void TermIdxTrans::
+load_data(const char * file_name) {
+    ifstream fin(file_name);
+    string input;
+    while (getline(fin, input)) {
+        vector<string> line_split;
+        string split_sep = "\t";
+        split_string(input, line_split, split_sep);
+        if (line_split.size() != 2) {
+            return;
+        }
+        string key = line_split[0];
+        long long value = atoi(line_split[1].c_str());
+        _term_to_index[key] = value;
+        _index_to_term[value] = key;
+    }
+}
+

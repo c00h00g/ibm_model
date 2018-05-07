@@ -135,23 +135,23 @@ load_data(const string& f_name) {
 
     cout << "deal data success!" << endl;
 
-#if _debug
+#if 1
     _term_index->print_term_to_index();
     _term_index->print_index_to_term();
 
-    for (int i = 0 ; i < f.size(); ++i) {
-        for (int j = 0; j < f[i].size(); ++j) {
-            cout << f[i][j] << endl;
-        }
-        cout << "=====" << endl;
-    }
+    //for (int i = 0 ; i < f.size(); ++i) {
+    //    for (int j = 0; j < f[i].size(); ++j) {
+    //        cout << f[i][j] << endl;
+    //    }
+    //    cout << "=====" << endl;
+    //}
 
-    for (int i = 0 ; i < e.size(); ++i) {
-        for (int j = 0; j < e[i].size(); ++j) {
-            cout << e[i][j] << endl;
-        }
-        cout << "=====" << endl;
-    }
+    //for (int i = 0 ; i < e.size(); ++i) {
+    //    for (int j = 0; j < e[i].size(); ++j) {
+    //        cout << e[i][j] << endl;
+    //    }
+    //    cout << "=====" << endl;
+    //}
 #endif
 
     return true;
@@ -207,17 +207,20 @@ deal_data_reverse(const string& input) {
     split_string(e_f_vec[1], f_vec, split_two_sep);
 
     f.push_back(f_vec);
-    for (int i = 0; i < f_vec.size(); ++i) {
-        _term_index->insert(f_vec[i]);
-    }
 
     //split e
     vector<string> e_vec;
     split_string(e_f_vec[0], e_vec, split_two_sep);
 
     e.push_back(e_vec);
+
+    //插入
     for (int i = 0; i < e_vec.size(); ++i) {
         _term_index->insert(e_vec[i]);
+    }
+
+    for (int i = 0; i < f_vec.size(); ++i) {
+        _term_index->insert(f_vec[i]);
     }
 
     return;
