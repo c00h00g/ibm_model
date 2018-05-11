@@ -2,7 +2,7 @@
 #include "phrase_align.h"
 
 
-const char * DATA_PATH = "../data/trans_data";
+const char * DATA_PATH = "../data/trans_data.1w";
 
 static void run_ibm_model(int direction) {
     int max_iter_num = 10;

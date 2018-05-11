@@ -49,7 +49,10 @@ public:
     bool _e_step();
     bool _m_step();
 
-    double _calc_sen_increment(const vector<string>& f_sen,
+    void _m_step_one_sen(const vector<string>& f_sen,
+                         const vector<string>& e_sen);
+
+    void _calc_sen_increment(const vector<string>& f_sen,
                               const vector<string>& e_sen);
 
     double _calc_sen_sum_increment(const string& f_term,
@@ -64,16 +67,13 @@ public:
     void dump_prob(const char * file_name);
 
 private:
-    vector<vector<string> > f; //france segment
-    vector<vector<string> > e; //english segment
+    vector< vector<string> > f; //france segment
+    vector< vector<string> > e; //english segment
 
-    set<long long> f_uniq_terms;
-    set<long long> e_uniq_terms;
+    map<pair<uint64_t, uint64_t>, double> f_e_co_occur_count; //f and e co occur times
+    map<uint64_t, double> e_count; // e occur times
 
-    map<pair<long long, long long>, double> f_e_co_occur_count; //f and e co occur times
-    map<long long, double> e_count; // e occur times
-
-    map<pair<long long, long long>, double> term_prob; //term f and term e parameters, 最终输出
+    map<pair<uint64_t, uint64_t>, double> term_prob; //term f and term e parameters, 最终输出
     double init_prob; // term map start probability
 
     int _max_iter_num;
