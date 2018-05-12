@@ -1,4 +1,5 @@
 CXX=g++
+CXXFLAGS = -pthread -std=c++0x -march=native -g
 RM=rm -f
 
 # generate lib
@@ -6,22 +7,22 @@ RM=rm -f
 #	   ar rcs $@ $<
 
 ibm_model : main.o ibm_model.o utils.o term_idx_trans.o phrase_align.o
-	$(CXX) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 main.o : main.cc ibm_model.h
-	$(CXX) -g -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 utils.o : utils.cc utils.h
-	$(CXX) -g -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 term_idx_trans.o : term_idx_trans.cc term_idx_trans.h
-	$(CXX) -g -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 ibm_model.o : ibm_model.cc ibm_model.h utils.h
-	$(CXX) -g -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 phrase_align.o : phrase_align.cc phrase_align.h utils.h
-	$(CXX) -g -c $<
+	$(CXX) $(CXXFLAGS) -c $<
 
 clean:
 	$(RM) *.o ibm_model
