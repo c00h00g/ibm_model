@@ -10,13 +10,14 @@ struct cmp {
 };
 
 IBM_Model_One::
-IBM_Model_One(int max_num, int direction) {
+IBM_Model_One(int max_num, int direction, int thread_num) {
     f.clear();
     e.clear();
     f_e_co_occur_count.clear();
     e_count.clear();
     _max_iter_num = max_num;
     _direction = direction;
+    _thread_num = thread_num;
 
     _term_index = new(std::nothrow) TermIdxTrans();
 
@@ -109,7 +110,7 @@ init_one_step() {
 
     //初始化计数
     for (int i = 0; i < f.size(); ++i) {
-        init_term_count_freq(e[i], f[i]);
+        init_term_count_freq(f[i], e[i]);
     }
 }
 
@@ -233,7 +234,14 @@ train() {
         init_one_step();
 
         //e step
-        _e_step();
+        cout << "f_size:" << f.size() << "thread_num : " << _thread_num << endl;
+        if (f.size() < _thread_num) {
+            cout << "start single thread e_step" << endl;
+            _e_step();
+        }else {
+            cout << "start multi thread e_step" << endl;
+            _start_e_step_thread();
+        }
         cout << "after e step!" << endl;
 
         //m step
@@ -348,6 +356,63 @@ _m_step() {
     return true;
 }
 
+int IBM_Model_One::
+_calc_sen_end(int thread_id) {
+    int sen_num_avg = f.size() / _thread_num;
+    int end = -1;
+    if (thread_id == _thread_num) {
+        end = f.size() - 1;
+    }else {
+        end = sen_num_avg * (thread_id + 1) - 1;
+    }
+    return end;
+}
+
+int IBM_Model_One::
+_calc_sen_start(int thread_id) {
+    int sen_num_avg = f.size() / _thread_num;
+    return sen_num_avg * (thread_id);
+}
+
+bool IBM_Model_One::
+_train_thread(int thread_id) {
+    int start = _calc_sen_start(thread_id);
+    int end = _calc_sen_end(thread_id);
+    printf("thread_id : %d, start : %d, end : %d\n", thread_id, start, end);
+    _e_step_thread(start, end);
+    return true;
+}
+
+bool IBM_Model_One::
+_start_e_step_thread() {
+    std::vector<std::thread> threads;
+    for (int i = 0; i < _thread_num; ++i) {
+        threads.push_back(std::thread([=]() { _train_thread(i); }));
+    }
+
+    //保证所有线程能够创建完成
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    
+    printf("create thread done \n");
+
+    for (int i = 0; i < _thread_num; ++i) {
+        threads[i].join();
+    }
+
+    printf("thread run done \n");
+
+    return true;
+}
+
+bool IBM_Model_One::
+_e_step_thread(int start, int end) {
+    for (int i = start; i <= end; ++i) {
+        vector<string> f_sen = f[i];
+        vector<string> e_sen = e[i];
+        _calc_sen_increment(f_sen, e_sen);
+    }
+    return true;
+}
 
 /**
  * @brief : execute e_step
@@ -368,14 +433,6 @@ _e_step()  {
 
     return true;
 }
-
-/*
-bool IBM_Model_One::
-_e_step_multi_thread() {
-    int thread_num = 5;
-    return true;
-}
-*/
 
 /**
  * @brief : 计算一个句对频次增量
@@ -398,8 +455,10 @@ _calc_sen_increment(const vector<string>& f_sen,
             double f_e_value = term_prob[make_pair(e_term_idx, f_term_idx)];
             double one_incre = f_e_value / f_sum;
 
+            _mutex.lock();
             f_e_co_occur_count[make_pair(e_term_idx, f_term_idx)] += one_incre;
             e_count[e_term_idx] += one_incre;
+            _mutex.unlock();
         }
     }
 }

@@ -2,11 +2,12 @@
 #include "phrase_align.h"
 
 
-const char * DATA_PATH = "../data/trans_data.1w";
+const char * DATA_PATH = "../data/trans_data";
 
 static void run_ibm_model(int direction) {
     int max_iter_num = 10;
-    IBM_Model_One * ibm_model = new IBM_Model_One(max_iter_num, direction);
+    int thread_num = 10;
+    IBM_Model_One * ibm_model = new IBM_Model_One(max_iter_num, direction, thread_num);
 
     ibm_model->load_data(DATA_PATH);
 

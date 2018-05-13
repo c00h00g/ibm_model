@@ -12,6 +12,8 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include <thread>
+#include <mutex>
 
 #include "utils.h"
 #include "term_idx_trans.h"
@@ -30,7 +32,9 @@ using std::set;
 //ibm model 1
 class IBM_Model_One {
 public:
-    IBM_Model_One(int max_num, int _direction);
+    IBM_Model_One(int max_num, 
+                  int direction,
+                  int thread_num);
 
     ~IBM_Model_One();
 
@@ -66,6 +70,13 @@ public:
 
     void dump_prob(const char * file_name);
 
+    //多线程
+    bool _start_e_step_thread();
+    bool _train_thread(int thread_id);
+    bool _e_step_thread(int start, int end);
+    int _calc_sen_start(int thread_id);
+    int _calc_sen_end(int thread_id);
+
 private:
     vector< vector<string> > f; //france segment
     vector< vector<string> > e; //english segment
@@ -77,6 +88,9 @@ private:
     double init_prob; // term map start probability
 
     int _max_iter_num;
+
+    int _thread_num;
+    std::mutex _mutex;
 
     //训练的方向
     //0: 正向
