@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <memory.h>
 
 #include "utils.h"
 #include "term_idx_trans.h"
