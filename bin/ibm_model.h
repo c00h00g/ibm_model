@@ -29,12 +29,14 @@ using std::cout;
 using std::endl;
 using std::set;
 
+static const uint32_t TERM_SIZE = 100000;
+
 //ibm model 1
 class IBM_Model_One {
 public:
-    IBM_Model_One(int max_num, 
-                  int direction,
-                  int thread_num);
+    IBM_Model_One(uint32_t max_num, 
+                  uint32_t direction,
+                  uint32_t thread_num);
 
     ~IBM_Model_One();
 

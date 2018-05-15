@@ -10,9 +10,11 @@ struct cmp {
 };
 
 IBM_Model_One::
-IBM_Model_One(int max_num, int direction, int thread_num) {
+IBM_Model_One(uint32_t max_num, uint32_t direction, uint32_t thread_num) {
     f.clear();
     e.clear();
+    f.reserve(TERM_SIZE);
+    e.reserve(TERM_SIZE);
     f_e_co_occur_count.clear();
     e_count.clear();
     _max_iter_num = max_num;
@@ -38,8 +40,8 @@ IBM_Model_One::
  **/
 void IBM_Model_One::
 init() {
-    int f_size = f.size();
-    int e_size = e.size();
+    uint32_t f_size = f.size();
+    uint32_t e_size = e.size();
 
     assert(f_size == e_size);
 
@@ -59,18 +61,18 @@ init_term_freq() {
     //初始化概率
     init_prob = 0.25;
 
-    int f_size = f.size();
-    int e_size = e.size();
+    uint32_t f_size = f.size();
+    uint32_t e_size = e.size();
 
     assert(f_size == e_size);
 
     //all sentences
-    for (int i = 0; i < f_size; ++i) {
+    for (uint32_t i = 0; i < f_size; ++i) {
         //left sentence <==> right sentence
-        for (int j = 0; j < e[i].size(); ++j) {
+        for (uint32_t j = 0; j < e[i].size(); ++j) {
             uint64_t term_l = _term_index->get_term_index(e[i][j]);
 
-            for (int k = 0; k < f[i].size(); ++k) {
+            for (uint32_t k = 0; k < f[i].size(); ++k) {
                 uint64_t term_r = _term_index->get_term_index(f[i][k]);
                 //english --> france prob
                 term_prob[make_pair(term_l, term_r)] = init_prob;
@@ -89,9 +91,9 @@ init_term_freq() {
 void IBM_Model_One::
 init_term_count_freq(const vector<string>& f_sen, 
                      const vector<string>& e_sen) {
-    for (int i = 0; i < f_sen.size(); ++i) {
+    for (uint32_t i = 0; i < f_sen.size(); ++i) {
         uint64_t f_idx = _term_index->get_term_index(f_sen[i]);
-        for (int j = 0; j < e_sen.size(); ++j) {
+        for (uint32_t j = 0; j < e_sen.size(); ++j) {
             uint64_t e_idx = _term_index->get_term_index(e_sen[j]);
             e_count[e_idx] = 0;
             f_e_co_occur_count[make_pair(e_idx, f_idx)] = 0.0;
@@ -109,7 +111,7 @@ init_one_step() {
     e_count.clear();
 
     //初始化计数
-    for (int i = 0; i < f.size(); ++i) {
+    for (uint32_t i = 0; i < f.size(); ++i) {
         init_term_count_freq(f[i], e[i]);
     }
 }
@@ -171,7 +173,7 @@ deal_data_forword(const string& input) {
     split_string(e_f_vec[0], f_vec, split_two_sep);
 
     f.push_back(f_vec);
-    for (int i = 0; i < f_vec.size(); ++i) {
+    for (uint32_t i = 0; i < f_vec.size(); ++i) {
         _term_index->insert(f_vec[i]);
     }
 
@@ -180,7 +182,7 @@ deal_data_forword(const string& input) {
     split_string(e_f_vec[1], e_vec, split_two_sep);
 
     e.push_back(e_vec);
-    for (int i = 0; i < e_vec.size(); ++i) {
+    for (uint32_t i = 0; i < e_vec.size(); ++i) {
         _term_index->insert(e_vec[i]);
     }
 
@@ -212,11 +214,11 @@ deal_data_reverse(const string& input) {
     e.push_back(e_vec);
 
     //插入
-    for (int i = 0; i < e_vec.size(); ++i) {
+    for (uint32_t i = 0; i < e_vec.size(); ++i) {
         _term_index->insert(e_vec[i]);
     }
 
-    for (int i = 0; i < f_vec.size(); ++i) {
+    for (uint32_t i = 0; i < f_vec.size(); ++i) {
         _term_index->insert(f_vec[i]);
     }
 
@@ -228,7 +230,7 @@ deal_data_reverse(const string& input) {
  **/
 void IBM_Model_One::
 train() {
-    for (int i = 0; i < _max_iter_num; ++i) {
+    for (uint32_t i = 0; i < _max_iter_num; ++i) {
         cout << "start iter:" << i << "-------" << endl;
         //初始化
         init_one_step();
@@ -289,7 +291,7 @@ dump_prob(const char * file_name) {
     }
     sort(score_vec.begin(), score_vec.end(), cmp());
 
-    for (int i = 0; i < score_vec.size(); ++i) {
+    for (uint32_t i = 0; i < score_vec.size(); ++i) {
         string f_term = _term_index->get_index_cor_term(score_vec[i].first.first);
         string e_term = _term_index->get_index_cor_term(score_vec[i].first.second);
         term_align_prob << score_vec[i].first.first << "\t"
@@ -307,8 +309,8 @@ dump_prob(const char * file_name) {
 void IBM_Model_One::
 _m_step_one_sen(const vector<string>& f_sen,
                 const vector<string>& e_sen) {
-    for (int i = 0; i < f_sen.size(); ++i) {
-        for (int j = 0; j < e_sen.size(); ++j) {
+    for (uint32_t i = 0; i < f_sen.size(); ++i) {
+        for (uint32_t j = 0; j < e_sen.size(); ++j) {
             uint64_t f_term_idx = _term_index->get_term_index(f_sen[i]);
             uint64_t e_term_idx = _term_index->get_term_index(e_sen[j]);
             pair<uint64_t, uint64_t> one_pair = make_pair(e_term_idx, f_term_idx);
@@ -325,12 +327,12 @@ _m_step_one_sen(const vector<string>& f_sen,
  **/
 bool IBM_Model_One::
 _m_step() {
-    int f_size = f.size();
-    int e_size = e.size();
+    uint32_t f_size = f.size();
+    uint32_t e_size = e.size();
 
     assert(f_size == e_size);
 
-    for (int i = 0; i < f_size; ++i) {
+    for (uint32_t i = 0; i < f_size; ++i) {
         _m_step_one_sen(f[i], e[i]);
     }
 
@@ -342,7 +344,7 @@ _m_step() {
     }
     sort(score_vec.begin(), score_vec.end(), cmp());
     
-    for (int i = 0; i < score_vec.size(); ++i) {
+    for (uint32_t i = 0; i < score_vec.size(); ++i) {
         string f_term = _term_index->get_index_cor_term(score_vec[i].first.first);
         string e_term = _term_index->get_index_cor_term(score_vec[i].first.second);
 
@@ -356,10 +358,10 @@ _m_step() {
     return true;
 }
 
-int IBM_Model_One::
-_calc_sen_end(int thread_id) {
-    int sen_num_avg = f.size() / _thread_num;
-    int end = -1;
+int32_t IBM_Model_One::
+_calc_sen_end(int32_t thread_id) {
+    int32_t sen_num_avg = f.size() / _thread_num;
+    int32_t end = -1;
     if (thread_id == _thread_num) {
         end = f.size() - 1;
     }else {
@@ -368,16 +370,16 @@ _calc_sen_end(int thread_id) {
     return end;
 }
 
-int IBM_Model_One::
-_calc_sen_start(int thread_id) {
-    int sen_num_avg = f.size() / _thread_num;
+int32_t IBM_Model_One::
+_calc_sen_start(int32_t thread_id) {
+    int32_t sen_num_avg = f.size() / _thread_num;
     return sen_num_avg * (thread_id);
 }
 
 bool IBM_Model_One::
-_train_thread(int thread_id) {
-    int start = _calc_sen_start(thread_id);
-    int end = _calc_sen_end(thread_id);
+_train_thread(int32_t thread_id) {
+    int32_t start = _calc_sen_start(thread_id);
+    int32_t end = _calc_sen_end(thread_id);
     printf("thread_id : %d, start : %d, end : %d\n", thread_id, start, end);
     _e_step_thread(start, end);
     return true;
@@ -386,7 +388,7 @@ _train_thread(int thread_id) {
 bool IBM_Model_One::
 _start_e_step_thread() {
     std::vector<std::thread> threads;
-    for (int i = 0; i < _thread_num; ++i) {
+    for (int32_t i = 0; i < _thread_num; ++i) {
         threads.push_back(std::thread([=]() { _train_thread(i); }));
     }
 
@@ -395,7 +397,7 @@ _start_e_step_thread() {
     
     printf("create thread done \n");
 
-    for (int i = 0; i < _thread_num; ++i) {
+    for (int32_t i = 0; i < _thread_num; ++i) {
         threads[i].join();
     }
 
@@ -405,8 +407,8 @@ _start_e_step_thread() {
 }
 
 bool IBM_Model_One::
-_e_step_thread(int start, int end) {
-    for (int i = start; i <= end; ++i) {
+_e_step_thread(int32_t start, int32_t end) {
+    for (int32_t i = start; i <= end; ++i) {
         vector<string> f_sen = f[i];
         vector<string> e_sen = e[i];
         _calc_sen_increment(f_sen, e_sen);
