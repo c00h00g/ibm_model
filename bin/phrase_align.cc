@@ -33,10 +33,12 @@ load_align_dict(const char * file_name, AlignPro& align_dict) {
         if (line_split.size() != 5) {
             continue;
         }
-        long long from = atoi(line_split[0].c_str());
-        long long to = atoi(line_split[2].c_str());
+        uint64_t from = atoi(line_split[0].c_str());
+        string from_term = line_split[1];
+        uint64_t to = atoi(line_split[2].c_str());
+        string to_term = line_split[3];
         double prob = atof(line_split[4].c_str());
-        pair<long long, long long> one_pair = make_pair(from, to);
+        pair<uint64_t, uint64_t> one_pair = make_pair(from, to);
         align_dict[one_pair] = prob;
     }
 }
@@ -231,7 +233,7 @@ gen_ngram_pair(const vector<string>& f_sen,
     int f_ngram_idx = _term_idx->get_term_index(f_ngram);
     int e_ngram_idx = _term_idx->get_term_index(e_ngram);
     
-    pair<long long, long long> f_e_pair = make_pair(f_ngram_idx, e_ngram_idx);
+    pair<uint64_t, uint64_t> f_e_pair = make_pair(f_ngram_idx, e_ngram_idx);
     if (f_e_ngram_co_cnt.find(f_e_pair) != f_e_ngram_co_cnt.end()) {
         f_e_ngram_co_cnt[make_pair(f_ngram_idx, e_ngram_idx)] += 1;
     }else {
@@ -288,9 +290,10 @@ void Phrase_Align::
 build_align_matrix(const vector<string>& f_sen,  
                    const vector<string>& e_sen) {
     //初始化
-    memset(mat_pro, sizeof(mat_pro), 0);
+    memset(mat_pro, 0, sizeof(mat_pro));
+    memset(mat_pro_reverse, 0, sizeof(mat_pro_reverse));
 
-    double MIN_PROB = 0.5;
+    double MIN_PROB = 0.2;
     int len_f = f_sen.size() > MAX_MAT_LEN ? MAX_MAT_LEN : f_sen.size();
     int len_e = e_sen.size() > MAX_MAT_LEN ? MAX_MAT_LEN : e_sen.size();
 
@@ -298,24 +301,49 @@ build_align_matrix(const vector<string>& f_sen,
         for(int j = 0; j < len_e; ++j) {
             string term_f = f_sen[i];
             string term_e = e_sen[j];
-            long long f_index = _term_idx->get_term_index(term_f);
-            long long e_index = _term_idx->get_term_index(term_e);
+            uint64_t f_index = _term_idx->get_term_index(term_f);
+            uint64_t e_index = _term_idx->get_term_index(term_e);
 
-            double f_2_e = forward_align[make_pair(f_index, e_index)];
-            double e_2_f = reverse_align[make_pair(e_index, f_index)];
- 
-            if (f_2_e > MIN_PROB && e_2_f > MIN_PROB) {
-                //cout << term_f << ":" << f_index << ":" << f_2_e << "||"
-                //     << term_e << ":" << e_index << ":" << e_2_f << endl;
+            double f_2_e = reverse_align[make_pair(f_index, e_index)];
+            double e_2_f = forward_align[make_pair(e_index, f_index)];
+
+            printf("france:%s, english:%s, f_index:%d, e_index:%d, f_2_e:%0.4f, e_2_f:%0.4f\n",
+                      term_f.c_str(),
+                      term_e.c_str(),
+                      f_index,
+                      e_index,
+                      f_2_e,
+                      e_2_f);
+
+            if ((f_2_e > MIN_PROB || e_2_f > MIN_PROB) && f_index != e_index) {
+                cout << term_f << ":" << f_index << ":" << f_2_e << "||"
+                     << term_e << ":" << e_index << ":" << e_2_f << endl;
                 mat_pro[i][j] = 1;
+                mat_pro_reverse[i][j] = 1;
             }
         }
     }
 
-#if 0
+#if 1
+    //output english headers
+    cout << "            ";
+    for (int i = 0; i < len_e; ++i) {
+        string term_e = e_sen[i];
+        cout << term_e << "                ";
+    }
+    cout << endl;
+
+    //output probility
     for (int i = 0; i < len_f; ++i) {
+        string term_f = f_sen[i];
+        cout << term_f << "  ";
         for(int j = 0; j < len_e; ++j) {
-            cout << mat_pro[i][j] << " ";
+            //cout << mat_pro[i][j];
+            //printf("%0.4f||%0.4f", mat_pro[i][j], mat_pro_reverse[i][j]);
+            printf("%d||%d", mat_pro[i][j], mat_pro_reverse[i][j]);
+            for (int k = 0; k < e_sen[j].size() + 4; ++k) {
+                cout << " ";
+            }
         }
         cout << endl;
     }
@@ -358,11 +386,11 @@ deal_one_sen_pair(const vector<string>& f_sen,
 void Phrase_Align::
 stat_ngram_prob() {
     for (AlignProIter iter = f_e_ngram_co_cnt.begin(); iter != f_e_ngram_co_cnt.end(); ++iter) {
-        pair<long long, long long> one_pair = iter->first;
+        pair<uint64_t, uint64_t> one_pair = iter->first;
         double f_e_cnt = iter->second;
 
-        long long f_term_idx = one_pair.first;
-        long long e_term_idx = one_pair.second;
+        uint64_t f_term_idx = one_pair.first;
+        uint64_t e_term_idx = one_pair.second;
 
         double e_cnt = 0.0;
         if (e_ngram_cnt.find(e_term_idx) == e_ngram_cnt.end()) {

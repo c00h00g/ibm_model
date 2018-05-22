@@ -83,6 +83,8 @@ private:
     //如果i和j && j和i都是对齐的，则mat_pro元素为1
     int mat_pro[MAX_MAT_LEN][MAX_MAT_LEN];
 
+    int mat_pro_reverse[MAX_MAT_LEN][MAX_MAT_LEN];
+
     //每行每列1个数的总和
     int row_sum[MAX_MAT_LEN];
     int column_sum[MAX_MAT_LEN];

@@ -6,7 +6,7 @@ TermIdxTrans::TermIdxTrans() {
     _cur_index = 0;
 }
 
-long long TermIdxTrans::insert(const string& term) {
+uint64_t TermIdxTrans::insert(const string& term) {
     TermIdxIter t_i_iter = _term_to_index.find(term);
     //find it
     if (t_i_iter != _term_to_index.end()) {
@@ -20,7 +20,7 @@ long long TermIdxTrans::insert(const string& term) {
     return _cur_index - 1;
 }
 
-long long TermIdxTrans::get_term_index(const string& term) {
+uint64_t TermIdxTrans::get_term_index(const string& term) {
     TermIdxIter t_i_iter = _term_to_index.find(term);
     //find it
     if (t_i_iter != _term_to_index.end()) {
@@ -31,7 +31,7 @@ long long TermIdxTrans::get_term_index(const string& term) {
 }
 
 string TermIdxTrans::
-get_index_cor_term(long long term_idx) {
+get_index_cor_term(uint64_t term_idx) {
     if (term_idx >= _cur_index) {
         return "";
     }
@@ -45,7 +45,7 @@ print_term_to_index() {
     cout << "term_idx size : " << _term_to_index.size() << endl;
     for (iter = _term_to_index.begin(); iter != _term_to_index.end(); ++iter) {
         string key = iter->first;
-        long long value = iter->second;
+        uint64_t value = iter->second;
         cout << key << ":" << value << endl;
     }
 }
@@ -55,7 +55,7 @@ print_index_to_term() {
     IdxTermIter iter;
     cout << "idx_to_term size : " << _index_to_term.size() << endl;
     for (iter = _index_to_term.begin(); iter != _index_to_term.end(); ++iter) {
-        long long key = iter->first;
+        uint64_t key = iter->first;
         string value = iter->second;
         cout << key << ":" << value << endl;
     }
@@ -73,7 +73,7 @@ dump_data(const char * file_name) {
     TermIdxIter iter;
     for (iter = _term_to_index.begin(); iter != _term_to_index.end(); ++iter) {
         string key = iter->first;
-        long long value = iter->second;
+        uint64_t value = iter->second;
         td_mp_file << key << "\t" << value << endl;
     }
 
@@ -98,7 +98,7 @@ load_data(const char * file_name) {
             return;
         }
         string key = line_split[0];
-        long long value = atoi(line_split[1].c_str());
+        uint64_t value = atoi(line_split[1].c_str());
         _term_to_index[key] = value;
         _index_to_term[value] = key;
     }
